@@ -1,20 +1,123 @@
 services:
-  mongodb : 
-    image : mongo:latest 
-    environment : 
-      MONGO_INITDB_ROOT_USERNAME : ${MONGO_USER}
-      MONGO_INITDB_ROOT_PASSWORD : ${MONGO_PASSWORD}
-    ports : 
-      - 27017:27017
-    volumes : 
-      - ./mongo_data:/data/db #Volumen persistente fuera del contenedor 
-  
-  mongo-express : 
-    image : mongo-express 
-    ports :
-      - 8081:8081
-    environment : 
-      ME_CONFIG_MONGODB_ADMINUSERNAME : ${MONGO_USER} 
-      ME_CONFIG_MONGODB_ADMINPASSWORD : ${MONGO_PASSWORD}
-      ME_CONFIG_MONGODB_URL : mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb:27017/
-      ME_CONFIG_BASICAUTH : 'false'
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: .
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      MONGO_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb:27017/${MONGO_DB:-portfolio}?authSource=admin
+    expose:
+      - "3000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:3000/health')
+          .then((response) => process.exit(response.ok ? 0 : 1))
+          .catch(() => process.exit(1))
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  mongodb:
+    image: mongo:8.2.9
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    volumes:
+      - ./mongo_data:/data/db
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --quiet --host 127.0.0.1
+          --username "$$MONGO_INITDB_ROOT_USERNAME"
+          --password "$$MONGO_INITDB_ROOT_PASSWORD"
+          --authenticationDatabase admin
+          --eval "quit(db.adminCommand('ping').ok ? 0 : 2)"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  mongo-express-user-init:
+    image: mongo:8.2.9
+    profiles:
+      - admin
+    restart: "no"
+    environment:
+      MONGO_ROOT_USER: ${MONGO_USER}
+      MONGO_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_DB: ${MONGO_DB:-portfolio}
+      MONGO_EXPRESS_DB_USER: ${MONGO_EXPRESS_DB_USER:-}
+      MONGO_EXPRESS_DB_PASSWORD: ${MONGO_EXPRESS_DB_PASSWORD:-}
+    volumes:
+      - ./scripts/configure-mongo-express-user.js:/scripts/configure-mongo-express-user.js:ro
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    entrypoint:
+      - sh
+      - -c
+    command:
+      - >-
+        exec mongosh --quiet --host mongodb
+        --authenticationDatabase admin
+        --username "$$MONGO_ROOT_USER"
+        --password "$$MONGO_ROOT_PASSWORD"
+        --file /scripts/configure-mongo-express-user.js
+
+  mongo-express:
+    image: mongo-express:1.0.2-20-alpine3.19
+    profiles:
+      - admin
+    restart: "no"
+    ports:
+      - "127.0.0.1:8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_EXPRESS_DB_USER:-}:${MONGO_EXPRESS_DB_PASSWORD:-}@mongodb:27017/${MONGO_DB:-portfolio}?authSource=${MONGO_DB:-portfolio}
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_PORT: "27017"
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "false"
+      ME_CONFIG_MONGODB_AUTH_DATABASE: ${MONGO_DB:-portfolio}
+      ME_CONFIG_MONGODB_AUTH_USERNAME: ${MONGO_EXPRESS_DB_USER:-}
+      ME_CONFIG_MONGODB_AUTH_PASSWORD: ${MONGO_EXPRESS_DB_PASSWORD:-}
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_WEB_USER:-}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_WEB_PASSWORD:-}
+      ME_CONFIG_SITE_COOKIESECRET: ${MONGO_EXPRESS_COOKIE_SECRET:-}
+      ME_CONFIG_SITE_SESSIONSECRET: ${MONGO_EXPRESS_SESSION_SECRET:-}
+    entrypoint:
+      - sh
+      - -c
+    command:
+      - >-
+        test -n "$$ME_CONFIG_MONGODB_AUTH_USERNAME" &&
+        test -n "$$ME_CONFIG_MONGODB_AUTH_PASSWORD" &&
+        test -n "$$ME_CONFIG_BASICAUTH_USERNAME" &&
+        test -n "$$ME_CONFIG_BASICAUTH_PASSWORD" &&
+        test -n "$$ME_CONFIG_SITE_COOKIESECRET" &&
+        test -n "$$ME_CONFIG_SITE_SESSIONSECRET" ||
+        { echo "Mongo Express credentials are required"; exit 1; };
+        exec /docker-entrypoint.sh mongo-express
+    depends_on:
+      mongodb:
+        condition: service_healthy
