@@ -14,7 +14,18 @@ const contactRoutes = require('./routes/contact.routes');
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(
+    cors(
+        {
+            origin: [
+                "https://nicosdev.com.ar",
+                "https://www.nicosdev.com.ar", 
+                "https://localhost:5173"
+            ],
+            credentials : true, 
+        }
+    )
+);
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
