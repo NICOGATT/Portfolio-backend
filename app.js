@@ -20,7 +20,7 @@ app.use(
             origin: [
                 "https://nicosdev.com.ar",
                 "https://www.nicosdev.com.ar", 
-                "https://localhost:5173"
+                "http://localhost:5173"
             ],
             credentials : true, 
         }
