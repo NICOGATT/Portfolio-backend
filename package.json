@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
+    "migrate:cloudinary:check": "node scripts/migrate-cloudinary-urls.js --check",
+    "migrate:cloudinary": "node scripts/migrate-cloudinary-urls.js --apply",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

@@ -127,7 +127,11 @@ const addImage = async (req, res) => {
         )));
 
         const imagesData = uploads.map((upload) => ({
-            url: upload.secure_url,
+            url: cloudinary.url(upload.public_id, {
+                secure: true,
+                fetch_format: 'auto',
+                quality: 'auto'
+            }),
             publicId: upload.public_id,
             projectId: proyecto.id
         }));

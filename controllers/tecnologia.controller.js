@@ -17,7 +17,13 @@ const crearTecnologia = async (req, res) => {
     try {
         const { nombre } = req.body;
         const uploadedIcon = await uploadIcono(req.file);
-        const icono = uploadedIcon ? uploadedIcon.secure_url : req.body.icono;
+        const icono = uploadedIcon
+            ? cloudinary.url(uploadedIcon.public_id, {
+                secure: true,
+                fetch_format: 'auto',
+                quality: 'auto'
+            })
+            : req.body.icono;
         const publicId = uploadedIcon ? uploadedIcon.public_id : null;
 
         const newTecnologia = await Tecnologia.create({ nombre, icono, publicId });
@@ -57,7 +63,11 @@ const updateTecnologia = async (req, res) => {
                 await cloudinary.uploader.destroy(req.tecnologia.publicId);
             }
 
-            updateData.icono = uploadedIcon.secure_url;
+            updateData.icono = cloudinary.url(uploadedIcon.public_id, {
+                secure: true,
+                fetch_format: 'auto',
+                quality: 'auto'
+            });
             updateData.publicId = uploadedIcon.public_id;
         } else if (req.body.icono) {
             if (req.tecnologia.publicId && req.body.icono !== req.tecnologia.icono) {
