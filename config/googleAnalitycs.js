@@ -18,8 +18,8 @@ if (!privateKey) {
 
 const analyticsDataClient = new BetaAnalyticsDataClient({
     credentials: {
-        clientEmail : clientEmail,
-        privateKey : privateKey,
+        client_email : clientEmail,
+        private_key : privateKey,
     },
 });
 
