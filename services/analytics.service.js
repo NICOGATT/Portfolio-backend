@@ -69,12 +69,16 @@ async function getVisits(startDate = "30daysAgo", endDate = "today") {
         ]
     })
 
-    const rawDate = row.dimensionValues[0].value; 
-    const date = `${rawDate.slice(0, 4)}-${rawDate.slice(4, 6)}-${rawDate.slice(6, 8)}`
-    return {
-        date, 
-        users : Number(row.metricValues[0].value)
-    }
+    return (response.rows ?? []).map((row) => {
+        const rawDate = row.dimensionValues?.[0]?.value ?? '';
+
+        const date = `${rawDate.slice(0, 4)}-${rawDate.slice(4, 6)}-${rawDate.slice(6, 8)}`;
+
+        return {
+            date,
+            users: Number(row.metricValues?.[0]?.value ?? 0),
+        };
+    });
 }
 module.exports = {
     getOverview, 
