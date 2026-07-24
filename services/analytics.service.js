@@ -1,3 +1,4 @@
+const { date } = require('joi');
 const {
     analyticsDataClient, 
     analyticsProperty
@@ -40,4 +41,35 @@ async function getOverview(startDate = '30daysAgo', endDate = 'today') {
     }
 }
 
-module.exports = {getOverview};
+async function getVisits(startDate = "30daysAgo", endDate = "today") {
+    const [response] = await analyticsDataClient.runReport({
+        property : analyticsProperty, 
+        dateRanges : [
+            {
+                startDate, 
+                endDate, 
+            }, 
+        ], 
+        dimensions : [
+            {
+                name : "date",
+            }
+        ], 
+        orderBys : [
+            {
+                dimension : {
+                    dimensionName : "date"
+                }
+            }
+        ]
+    })
+
+    return response.rows.map((row) => ({
+        date : row.dimensionValues[0].value, 
+        users : Number(row.metricValues[0].value)
+    }))
+}
+module.exports = {
+    getOverview, 
+    getVisits
+};
