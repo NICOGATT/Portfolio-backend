@@ -10,6 +10,7 @@ const usuarioRoutes = require('./routes/usuario.routes');
 const proyectoRoutes = require('./routes/proyecto.routes');
 const tecnologiaRoutes = require('./routes/tecnologia.routes');
 const contactRoutes = require('./routes/contact.routes');
+const analyticsRoutes = require('./routes/analytics.routes');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -37,6 +38,7 @@ app.use('/api', usuarioRoutes);
 app.use('/api', proyectoRoutes);
 app.use('/api', tecnologiaRoutes);
 app.use('/api', contactRoutes);
+app.use('/api/admin/analytics', analyticsRoutes);
 
 const startServer = async () => {
     await conectarDb();
