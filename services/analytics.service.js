@@ -55,6 +55,11 @@ async function getVisits(startDate = "30daysAgo", endDate = "today") {
                 name : "date",
             }
         ], 
+        metrics : [
+            {
+                name : "activeUsers",
+            }
+        ], 
         orderBys : [
             {
                 dimension : {
