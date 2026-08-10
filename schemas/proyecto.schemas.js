@@ -10,11 +10,20 @@ const createProyectoSchema = Joi.object({
     usuarioId: objectId.required()
 });
 
+const updateProyectoSchema = Joi.object({
+    nombre: Joi.string(),
+    descripcion: Joi.string(),
+    urlRepo: Joi.string().uri(),
+    img: Joi.array().items(Joi.string().uri()).optional(),
+    usuarioId: objectId
+}).min(1).unknown(true);
+
 const tecnologiasProyectoSchema = Joi.object({
     tecnologias: Joi.array().items(objectId.required()).min(1).required()
 });
 
 module.exports = {
     createProyectoSchema,
+    updateProyectoSchema,
     tecnologiasProyectoSchema
 }

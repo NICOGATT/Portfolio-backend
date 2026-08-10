@@ -77,9 +77,16 @@ const getProyectoById = async (req, res) => {
 const updateProyecto = async (req, res) => {
     try {
         const { nombre, descripcion, urlRepo, usuarioId } = req.body;
+
+        const camposActualizacion = {};
+        if (nombre !== undefined) camposActualizacion.nombre = nombre;
+        if (descripcion !== undefined) camposActualizacion.descripcion = descripcion;
+        if (urlRepo !== undefined) camposActualizacion.urlRepo = urlRepo;
+        if (usuarioId !== undefined) camposActualizacion.usuarioId = usuarioId;
+
         const proyecto = await Proyecto.findByIdAndUpdate(
             req.proyecto.id,
-            { nombre, descripcion, urlRepo, usuarioId },
+            { $set: camposActualizacion },
             { new: true, runValidators: true }
         ).populate(populateProyecto);
 
@@ -269,6 +276,26 @@ const setTecnologiasDeProyecto = async (req, res) => {
     }
 };
 
+const removeTecnologiaProyecto = async (req, res) => {
+    try {
+        const proyecto = req.proyecto;
+        const { tecnologiaId } = req.params;
+
+        await Proyecto.findByIdAndUpdate(proyecto.id, {
+            $pull: { tecnologias: tecnologiaId }
+        });
+
+        return res.status(200).json({
+            message: 'Tecnologia eliminada del proyecto'
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Error al eliminar la tecnologia del proyecto',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     crearProyecto,
     getProyectos,
@@ -280,5 +307,6 @@ module.exports = {
     deleteImage,
     addTecnologiasProyecto,
     getTecnologiasProyecto,
-    setTecnologiasDeProyecto
+    setTecnologiasDeProyecto,
+    removeTecnologiaProyecto
 };
