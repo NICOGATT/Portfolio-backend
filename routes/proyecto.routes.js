@@ -12,7 +12,7 @@ const { upload } = require('../config/configMulter');
 router.post('/proyectos', validarProyecto, proyectoController.crearProyecto);
 router.get('/proyectos', proyectoController.getProyectos);
 router.get('/proyectos/:id', validarIdProyecto, proyectoController.getProyectoById);
-router.put('/proyectos/:id', verificarToken, validarAdmin, validarIdProyecto, validarProyecto, proyectoController.updateProyecto);
+router.patch('/proyectos/:id', verificarToken, validarAdmin, validarIdProyecto, validarProyecto, proyectoController.updateProyecto);
 router.delete('/proyectos/:id', verificarToken, validarAdmin, validarIdProyecto, proyectoController.deleteProyecto);
 router.post('/proyectos/:id/images', verificarToken, validarAdmin, validarIdProyecto, upload.array("images"), proyectoController.addImage);
 router.get('/proyectos/:id/images', validarIdProyecto, proyectoController.getImageByProyecto); 
