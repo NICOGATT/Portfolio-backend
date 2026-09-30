@@ -11,20 +11,28 @@ const proyectoRoutes = require('./routes/proyecto.routes');
 const tecnologiaRoutes = require('./routes/tecnologia.routes');
 const contactRoutes = require('./routes/contact.routes');
 const analyticsRoutes = require('./routes/analytics.routes');
+const leadRoutes = require('./routes/lead.routes');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// CORS_ORIGINS permite sumar orígenes por entorno (ej. el preview de Vercel en staging), separados por coma.
+const origenesExtra = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((origen) => origen.trim())
+    .filter(Boolean);
 
 app.use(
     cors(
         {
             origin: [
                 "https://nicosdev.com.ar",
-                "https://www.nicosdev.com.ar", 
-                "http://localhost:5173", 
-                "http://192.168.0.213:5173"
+                "https://www.nicosdev.com.ar",
+                "http://localhost:5173",
+                "http://192.168.0.213:5173",
+                ...origenesExtra
             ],
-            credentials : true, 
+            credentials : true,
         }
     )
 );
@@ -39,6 +47,7 @@ app.use('/api', usuarioRoutes);
 app.use('/api', proyectoRoutes);
 app.use('/api', tecnologiaRoutes);
 app.use('/api', contactRoutes);
+app.use('/api', leadRoutes);
 app.use('/api/admin/analytics', analyticsRoutes);
 
 const startServer = async () => {
